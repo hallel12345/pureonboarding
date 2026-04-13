@@ -38,7 +38,7 @@ Copy `.env.example` to `.env.local` and fill values.
 Set these in `.env.local` (local) and in Vercel Project Settings -> Environment Variables (production):
 
 - `ACCOUNTANT_EMAIL=paige@pandaaccounting.com`
-- `INTERNAL_CC_EMAILS=purepest.ut@gmail.com,purepest.id@mail.com`
+- `INTERNAL_CC_EMAILS=purepest.ut@gmail.com,purepest.id@gmail.com`
 
 The final submit route always sends:
 
