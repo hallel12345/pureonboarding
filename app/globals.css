@@ -35,10 +35,17 @@ body {
 
 body {
   background:
-    radial-gradient(1000px 600px at 90% -10%, #e6f1d5 0%, transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, #eef6df 0%, transparent 55%),
+    radial-gradient(1100px 650px at 92% -12%, #e6f1d5 0%, transparent 58%),
+    radial-gradient(950px 520px at -12% 115%, #eef6df 0%, transparent 52%),
     var(--bg);
+  background-attachment: fixed;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+body > main {
+  flex: 1;
 }
 
 a {
@@ -94,15 +101,19 @@ select:focus {
 
 /* Top brand bar */
 .brand-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: saturate(140%) blur(6px);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: saturate(160%) blur(10px);
+  -webkit-backdrop-filter: saturate(160%) blur(10px);
 }
 
 .brand-bar-inner {
   max-width: 980px;
   margin: 0 auto;
-  padding: 0.9rem 1rem;
+  padding: 0.7rem 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -116,27 +127,61 @@ select:focus {
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--brand-ink);
-  font-size: 1.05rem;
+  text-decoration: none;
 }
 
-.brand-dot {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--brand);
-  box-shadow: var(--shadow-brand);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 0.85rem;
+.brand-mark:hover {
+  color: var(--brand-hover);
+}
+
+.brand-logo {
+  height: 38px;
+  width: auto;
+  display: block;
+  border-radius: 4px;
 }
 
 .brand-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: white;
+}
+
+.brand-tag-accent {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 0 3px rgba(145, 194, 104, 0.2);
+}
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(6px);
+  margin-top: 2rem;
+}
+
+.site-footer-inner {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 1.2rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
   font-size: 0.85rem;
-  font-weight: 500;
+  color: var(--muted);
+  flex-wrap: wrap;
 }
 
 .shell {
@@ -178,16 +223,22 @@ select:focus {
 }
 
 .panel {
+  position: relative;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 1rem;
+  border-radius: 1.1rem;
   box-shadow: var(--shadow-sm);
-  padding: 1.3rem;
-  transition: box-shadow 0.2s ease;
+  padding: 1.6rem 1.5rem;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 
 .panel:hover {
   box-shadow: var(--shadow-md);
+}
+
+.step-panel {
+  padding: 1.9rem 1.7rem 1.7rem;
+  background: linear-gradient(180deg, #ffffff 0%, #fcfdf9 100%);
 }
 
 .panel h2 {
@@ -550,7 +601,7 @@ input[type="file"]::file-selector-button:hover {
 }
 
 .step-panel {
-  animation: stepFade 0.3s ease;
+  animation: stepFade 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
   min-height: 260px;
 }
 
