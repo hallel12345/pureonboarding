@@ -13,20 +13,21 @@ export const EMPLOYER_ENTITY_OPTIONS: EmployerEntity[] = [
   },
   {
     value: "pure-pest-control-llc",
-    label: "Pure Pest Control LLC (Utah)",
+    label: "Pure Pest Control LLC",
     forWorkerTypes: ["w2"],
+    locationState: "UT",
   },
   {
     value: "pure-pest-solutions-id-llc",
     label: "Pure Pest Solutions of Idaho LLC",
     forWorkerTypes: ["w2"],
+    locationState: "ID",
   },
 ];
 
 export const WORK_LOCATION_OPTIONS: WorkLocation[] = [
   { value: "UT", label: "Utah" },
   { value: "ID", label: "Idaho" },
-  { value: "AZ", label: "Arizona" },
 ];
 
 export const REQUIRED_FORMS: RequiredFormDefinition[] = [

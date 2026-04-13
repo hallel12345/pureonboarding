@@ -8,6 +8,7 @@ export type EmployerEntity = {
   value: string;
   label: string;
   forWorkerTypes: WorkerType[];
+  locationState?: string;
 };
 
 export type WorkLocation = {

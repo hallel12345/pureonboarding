@@ -10,34 +10,42 @@ const formIdSchema = z.enum(
 const entityValues = EMPLOYER_ENTITY_OPTIONS.map((option) => option.value);
 const workLocationValues = WORK_LOCATION_OPTIONS.map((option) => option.value);
 
-export const profileFormSchema = z.object({
-  fullLegalName: z.string().trim().min(1, "Full legal name is required."),
-  preferredName: z.string().trim().min(1, "Preferred name is required."),
-  email: z.email("Valid email is required."),
-  phone: z.string().trim().min(7, "Phone is required."),
-  streetAddress: z.string().trim().min(1, "Street address is required."),
-  city: z.string().trim().min(1, "City is required."),
-  state: z.string().trim().min(2, "State is required."),
-  zip: z.string().trim().min(5, "Zip is required."),
-  startDate: z.iso.date("Start date is required."),
-  shirtSize: z.string().trim().min(1, "Shirt size is required."),
-  managerName: z.string().trim().min(1, "Manager name is required."),
-  emergencyContactName: z
-    .string()
-    .trim()
-    .min(1, "Emergency contact name is required."),
-  emergencyContactPhone: z
-    .string()
-    .trim()
-    .min(7, "Emergency contact phone is required."),
-  workerType: workerTypeSchema,
-  employerEntity: z
-    .string()
-    .refine((value) => entityValues.includes(value), "Employer entity is required."),
-  workLocationState: z
-    .string()
-    .refine((value) => workLocationValues.includes(value), "Work location is required."),
-});
+export const profileFormSchema = z
+  .object({
+    fullLegalName: z.string().trim().min(1, "Full legal name is required."),
+    preferredName: z.string().trim().min(1, "Preferred name is required."),
+    email: z.email("Valid email is required."),
+    phone: z.string().trim().min(7, "Phone is required."),
+    streetAddress: z.string().trim().min(1, "Street address is required."),
+    city: z.string().trim().min(1, "City is required."),
+    state: z.string().trim().min(2, "State is required."),
+    zip: z.string().trim().min(5, "Zip is required."),
+    startDate: z.iso.date("Start date is required."),
+    shirtSize: z.string().trim().min(1, "Shirt size is required."),
+    managerName: z.string().trim().min(1, "Manager name is required."),
+    emergencyContactName: z
+      .string()
+      .trim()
+      .min(1, "Emergency contact name is required."),
+    emergencyContactPhone: z
+      .string()
+      .trim()
+      .min(7, "Emergency contact phone is required."),
+    workerType: workerTypeSchema,
+    employerEntity: z
+      .string()
+      .refine((value) => entityValues.includes(value), "Employer entity is required."),
+    workLocationState: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.workerType === "w2" && !workLocationValues.includes(data.workLocationState)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["workLocationState"],
+        message: "Work location is required.",
+      });
+    }
+  });
 
 export const uploadedFormFileSchema = z.object({
   formId: formIdSchema,

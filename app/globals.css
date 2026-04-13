@@ -318,6 +318,20 @@ select:focus {
   gap: 0.95rem;
 }
 
+.entity-note {
+  margin: 0.2rem 0 0;
+  padding: 0.7rem 0.9rem;
+  background: var(--bg-accent);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--brand);
+  border-radius: 0.6rem;
+  color: var(--brand-deep);
+}
+
+.entity-note strong {
+  color: var(--brand-ink);
+}
+
 .field-heading {
   margin: 0 0 0.55rem;
   font-size: 0.8rem;

@@ -36,14 +36,23 @@ type StepId =
   | "uploads"
   | "review";
 
-const STEPS: { id: StepId; title: string; eyebrow: string }[] = [
-  { id: "welcome", title: "Welcome", eyebrow: "Step 1" },
-  { id: "worker-type", title: "Worker Type", eyebrow: "Step 2" },
-  { id: "employer-location", title: "Entity & Location", eyebrow: "Step 3" },
-  { id: "profile", title: "Your Information", eyebrow: "Step 4" },
-  { id: "uploads", title: "Required Forms", eyebrow: "Step 5" },
-  { id: "review", title: "Review & Submit", eyebrow: "Step 6" },
+type StepDef = { id: StepId; title: string };
+
+const ALL_STEPS: StepDef[] = [
+  { id: "welcome", title: "Welcome" },
+  { id: "worker-type", title: "Worker Type" },
+  { id: "employer-location", title: "Entity & Location" },
+  { id: "profile", title: "Your Information" },
+  { id: "uploads", title: "Required Forms" },
+  { id: "review", title: "Review & Submit" },
 ];
+
+function getStepsForWorkerType(workerType: WorkerType | ""): StepDef[] {
+  if (workerType === "1099") {
+    return ALL_STEPS.filter((step) => step.id !== "employer-location");
+  }
+  return ALL_STEPS;
+}
 
 const INITIAL_PROFILE: ProfileFormData = {
   fullLegalName: "",
@@ -85,7 +94,12 @@ export function OnboardingWizard() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const currentStep = STEPS[stepIndex];
+  const steps = useMemo(
+    () => getStepsForWorkerType(profile.workerType),
+    [profile.workerType],
+  );
+  const safeStepIndex = Math.min(stepIndex, steps.length - 1);
+  const currentStep = steps[safeStepIndex];
 
   const requiredForms = useMemo(() => {
     if (!profile.workerType) {
@@ -123,8 +137,8 @@ export function OnboardingWizard() {
     }
   })();
 
-  const isLastStep = stepIndex === STEPS.length - 1;
-  const isFirstStep = stepIndex === 0;
+  const isLastStep = safeStepIndex === steps.length - 1;
+  const isFirstStep = safeStepIndex === 0;
 
   function setProfileValue<K extends keyof ProfileFormData>(key: K, value: ProfileFormData[K]) {
     setProfile((prev) => {
@@ -139,17 +153,34 @@ export function OnboardingWizard() {
         if (!currentStillValid) {
           next.employerEntity = matchingEntity.length === 1 ? matchingEntity[0].value : "";
         }
+        if (value === "1099") {
+          next.workLocationState = "";
+        }
+      }
+      if (key === "workLocationState" && value) {
+        const matchedByLocation = EMPLOYER_ENTITY_OPTIONS.find(
+          (entity) =>
+            entity.locationState === value &&
+            entity.forWorkerTypes.includes(next.workerType as WorkerType),
+        );
+        if (matchedByLocation) {
+          next.employerEntity = matchedByLocation.value;
+        }
       }
       return next;
     });
   }
 
-  const availableEntities = useMemo(() => {
-    if (!profile.workerType) return EMPLOYER_ENTITY_OPTIONS;
-    return EMPLOYER_ENTITY_OPTIONS.filter((entity) =>
-      entity.forWorkerTypes.includes(profile.workerType as WorkerType),
+  const inferredEntityForLocation = useMemo(() => {
+    if (profile.workerType !== "w2" || !profile.workLocationState) return null;
+    return (
+      EMPLOYER_ENTITY_OPTIONS.find(
+        (entity) =>
+          entity.locationState === profile.workLocationState &&
+          entity.forWorkerTypes.includes("w2"),
+      ) ?? null
     );
-  }, [profile.workerType]);
+  }, [profile.workerType, profile.workLocationState]);
 
   function setUploadState(formId: FormId, state: Partial<UploadState>) {
     setUploadStates((prev) => {
@@ -316,12 +347,14 @@ export function OnboardingWizard() {
     }
   }
 
-  const progressPercent = Math.round(((stepIndex + 1) / STEPS.length) * 100);
+  const progressPercent = Math.round(((safeStepIndex + 1) / steps.length) * 100);
 
   return (
     <main className="shell">
       <section className="page-header">
-        <p className="eyebrow">{currentStep.eyebrow} of {STEPS.length}</p>
+        <p className="eyebrow">
+          Step {safeStepIndex + 1} of {steps.length}
+        </p>
         <h1>{currentStep.title}</h1>
       </section>
 
@@ -330,17 +363,17 @@ export function OnboardingWizard() {
       </div>
 
       <ol className="step-dots" aria-label="Onboarding progress">
-        {STEPS.map((s, i) => (
+        {steps.map((s, i) => (
           <li
             key={s.id}
             className={
-              i < stepIndex
+              i < safeStepIndex
                 ? "step-dot done"
-                : i === stepIndex
+                : i === safeStepIndex
                   ? "step-dot active"
                   : "step-dot"
             }
-            aria-current={i === stepIndex ? "step" : undefined}
+            aria-current={i === safeStepIndex ? "step" : undefined}
           >
             <span className="step-dot-num">{i + 1}</span>
             <span className="step-dot-label">{s.title}</span>
@@ -391,26 +424,12 @@ export function OnboardingWizard() {
 
         {currentStep.id === "employer-location" && (
           <div className="stack">
+            <p className="subtitle" style={{ marginTop: 0 }}>
+              Which state will you be working in? Your employer entity is assigned
+              automatically based on your selection.
+            </p>
             <div>
-              <h3 className="field-heading">Employer Entity</h3>
-              <div className="grid-two">
-                {availableEntities.map((entity) => (
-                  <button
-                    key={entity.value}
-                    type="button"
-                    className={
-                      profile.employerEntity === entity.value ? "choice selected" : "choice"
-                    }
-                    onClick={() => setProfileValue("employerEntity", entity.value)}
-                  >
-                    {entity.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="field-heading">Work Location</h3>
+              <h3 className="field-heading">Work State</h3>
               <div className="grid-two">
                 {WORK_LOCATION_OPTIONS.map((location) => (
                   <button
@@ -426,6 +445,12 @@ export function OnboardingWizard() {
                 ))}
               </div>
             </div>
+
+            {inferredEntityForLocation ? (
+              <p className="muted small entity-note">
+                Employer entity: <strong>{inferredEntityForLocation.label}</strong>
+              </p>
+            ) : null}
           </div>
         )}
 
@@ -678,6 +703,15 @@ export function OnboardingWizard() {
                 <dt>Start Date</dt>
                 <dd>{profile.startDate || "\u2014"}</dd>
               </div>
+              {profile.workerType === "w2" ? (
+                <div>
+                  <dt>Work Location</dt>
+                  <dd>
+                    {WORK_LOCATION_OPTIONS.find((o) => o.value === profile.workLocationState)
+                      ?.label ?? "\u2014"}
+                  </dd>
+                </div>
+              ) : null}
               <div>
                 <dt>Uploads</dt>
                 <dd>
