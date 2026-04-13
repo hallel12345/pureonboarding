@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   EMPLOYER_ENTITY_OPTIONS,
-  REQUIRED_FORMS,
   SHIRT_SIZE_OPTIONS,
   WORK_LOCATION_OPTIONS,
   WORKER_TYPE_OPTIONS,
@@ -28,6 +27,23 @@ type UploadState = {
   error: string | null;
   pendingFile: File | null;
 };
+
+type StepId =
+  | "welcome"
+  | "worker-type"
+  | "employer-location"
+  | "profile"
+  | "uploads"
+  | "review";
+
+const STEPS: { id: StepId; title: string; eyebrow: string }[] = [
+  { id: "welcome", title: "Welcome", eyebrow: "Step 1" },
+  { id: "worker-type", title: "Worker Type", eyebrow: "Step 2" },
+  { id: "employer-location", title: "Entity & Location", eyebrow: "Step 3" },
+  { id: "profile", title: "Your Information", eyebrow: "Step 4" },
+  { id: "uploads", title: "Required Forms", eyebrow: "Step 5" },
+  { id: "review", title: "Review & Submit", eyebrow: "Step 6" },
+];
 
 const INITIAL_PROFILE: ProfileFormData = {
   fullLegalName: "",
@@ -59,6 +75,7 @@ function createSubmissionId(): string {
 export function OnboardingWizard() {
   const router = useRouter();
   const [submissionId] = useState<string>(createSubmissionId);
+  const [stepIndex, setStepIndex] = useState(0);
   const [profile, setProfile] = useState<ProfileFormData>(INITIAL_PROFILE);
   const [uploadedFiles, setUploadedFiles] = useState<
     Partial<Record<FormId, UploadedFormFile>>
@@ -67,6 +84,8 @@ export function OnboardingWizard() {
   const [confirmationChecked, setConfirmationChecked] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const currentStep = STEPS[stepIndex];
 
   const requiredForms = useMemo(() => {
     if (!profile.workerType) {
@@ -85,8 +104,27 @@ export function OnboardingWizard() {
     profile.workerType !== "" &&
     requiredForms.every((requiredForm) => Boolean(uploadedFiles[requiredForm.id]));
 
-  const canSubmit =
-    isProfileValid && hasAllRequiredUploads && confirmationChecked && !isSubmitting;
+  const stepIsComplete = ((): boolean => {
+    switch (currentStep.id) {
+      case "welcome":
+        return true;
+      case "worker-type":
+        return profile.workerType !== "";
+      case "employer-location":
+        return profile.employerEntity !== "" && profile.workLocationState !== "";
+      case "profile":
+        return isProfileValid;
+      case "uploads":
+        return hasAllRequiredUploads;
+      case "review":
+        return (
+          isProfileValid && hasAllRequiredUploads && confirmationChecked && !isSubmitting
+        );
+    }
+  })();
+
+  const isLastStep = stepIndex === STEPS.length - 1;
+  const isFirstStep = stepIndex === 0;
 
   function setProfileValue<K extends keyof ProfileFormData>(key: K, value: ProfileFormData[K]) {
     setProfile((prev) => ({ ...prev, [key]: value }));
@@ -195,8 +233,30 @@ export function OnboardingWizard() {
     });
   }
 
+  function goNext() {
+    if (!stepIsComplete || isLastStep) {
+      return;
+    }
+    setStepIndex((i) => i + 1);
+    scrollToTop();
+  }
+
+  function goBack() {
+    if (isFirstStep) {
+      return;
+    }
+    setStepIndex((i) => i - 1);
+    scrollToTop();
+  }
+
+  function scrollToTop() {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
   async function handleSubmit() {
-    if (!canSubmit) {
+    if (!stepIsComplete) {
       return;
     }
 
@@ -235,194 +295,229 @@ export function OnboardingWizard() {
     }
   }
 
+  const progressPercent = Math.round(((stepIndex + 1) / STEPS.length) * 100);
+
   return (
     <main className="shell">
       <section className="page-header">
-        <p className="eyebrow">Pure Pest Solutions</p>
-        <h1>Employee & Technician Onboarding</h1>
-        <p className="subtitle">
-          Complete each section in order. Final submission is locked until all required fields and
-          required form uploads are complete.
-        </p>
+        <p className="eyebrow">{currentStep.eyebrow} of {STEPS.length}</p>
+        <h1>{currentStep.title}</h1>
       </section>
 
-      <section className="panel">
-        <h2>1. Welcome & Instructions</h2>
-        <ul className="instruction-list">
-          <li>Review the required forms for your worker type.</li>
-          <li>Download, complete, sign, then upload each required form.</li>
-          <li>Submission is blocked until every required upload is successful.</li>
-        </ul>
-      </section>
+      <div className="progress-track" aria-hidden>
+        <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
+      </div>
 
-      <section className="panel">
-        <h2>2. Worker Type</h2>
-        <div className="grid-two">
-          {WORKER_TYPE_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={profile.workerType === option.value ? "choice selected" : "choice"}
-              onClick={() => setProfileValue("workerType", option.value)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </section>
+      <ol className="step-dots" aria-label="Onboarding progress">
+        {STEPS.map((s, i) => (
+          <li
+            key={s.id}
+            className={
+              i < stepIndex
+                ? "step-dot done"
+                : i === stepIndex
+                  ? "step-dot active"
+                  : "step-dot"
+            }
+            aria-current={i === stepIndex ? "step" : undefined}
+          >
+            <span className="step-dot-num">{i + 1}</span>
+            <span className="step-dot-label">{s.title}</span>
+          </li>
+        ))}
+      </ol>
 
-      <section className="panel">
-        <h2>3. Employer Entity & Work Location</h2>
-        <div className="field-grid">
-          <label>
-            Employer Entity
-            <select
-              value={profile.employerEntity}
-              onChange={(event) => setProfileValue("employerEntity", event.target.value)}
-            >
-              <option value="">Select an entity</option>
-              {EMPLOYER_ENTITY_OPTIONS.map((entity) => (
-                <option key={entity.value} value={entity.value}>
-                  {entity.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            Work Location / State
-            <select
-              value={profile.workLocationState}
-              onChange={(event) => setProfileValue("workLocationState", event.target.value)}
-            >
-              <option value="">Select a location</option>
-              {WORK_LOCATION_OPTIONS.map((location) => (
-                <option key={location.value} value={location.value}>
-                  {location.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </section>
-
-      <section className="panel">
-        <h2>4. Supporting Information</h2>
-        <div className="field-grid">
-          <label>
-            Full Legal Name
-            <input
-              value={profile.fullLegalName}
-              onChange={(event) => setProfileValue("fullLegalName", event.target.value)}
-            />
-          </label>
-          <label>
-            Preferred Name
-            <input
-              value={profile.preferredName}
-              onChange={(event) => setProfileValue("preferredName", event.target.value)}
-            />
-          </label>
-          <label>
-            Email
-            <input
-              type="email"
-              value={profile.email}
-              onChange={(event) => setProfileValue("email", event.target.value)}
-            />
-          </label>
-          <label>
-            Phone
-            <input
-              value={profile.phone}
-              onChange={(event) => setProfileValue("phone", event.target.value)}
-            />
-          </label>
-          <label>
-            Street Address
-            <input
-              value={profile.streetAddress}
-              onChange={(event) => setProfileValue("streetAddress", event.target.value)}
-            />
-          </label>
-          <label>
-            City
-            <input
-              value={profile.city}
-              onChange={(event) => setProfileValue("city", event.target.value)}
-            />
-          </label>
-          <label>
-            State
-            <input
-              value={profile.state}
-              onChange={(event) => setProfileValue("state", event.target.value)}
-            />
-          </label>
-          <label>
-            Zip
-            <input
-              value={profile.zip}
-              onChange={(event) => setProfileValue("zip", event.target.value)}
-            />
-          </label>
-          <label>
-            Start Date
-            <input
-              type="date"
-              value={profile.startDate}
-              onChange={(event) => setProfileValue("startDate", event.target.value)}
-            />
-          </label>
-          <label>
-            Shirt Size
-            <select
-              value={profile.shirtSize}
-              onChange={(event) => setProfileValue("shirtSize", event.target.value)}
-            >
-              <option value="">Select shirt size</option>
-              {SHIRT_SIZE_OPTIONS.map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Manager Name
-            <input
-              value={profile.managerName}
-              onChange={(event) => setProfileValue("managerName", event.target.value)}
-            />
-          </label>
-          <label>
-            Emergency Contact Name
-            <input
-              value={profile.emergencyContactName}
-              onChange={(event) => setProfileValue("emergencyContactName", event.target.value)}
-            />
-          </label>
-          <label>
-            Emergency Contact Phone
-            <input
-              value={profile.emergencyContactPhone}
-              onChange={(event) => setProfileValue("emergencyContactPhone", event.target.value)}
-            />
-          </label>
-        </div>
-      </section>
-
-      <section className="panel">
-        <h2>5. Required Forms</h2>
-        {profile.workerType === "" ? (
-          <p className="muted">Choose worker type above to load required forms.</p>
-        ) : (
+      <section className="panel step-panel">
+        {currentStep.id === "welcome" && (
           <div className="stack">
+            <h2>Let&rsquo;s get you onboarded</h2>
+            <p className="subtitle" style={{ marginTop: 0 }}>
+              This short flow collects your information and required forms, then sends
+              everything to payroll and accounting. It takes about 10&ndash;15 minutes.
+            </p>
+            <ul className="instruction-list">
+              <li>Pick your worker type &mdash; 1099 Sales Rep or W-2 Employee.</li>
+              <li>Fill in your personal and emergency contact info.</li>
+              <li>Download, complete, sign, and upload each required form.</li>
+              <li>Review and submit &mdash; you&rsquo;ll get a confirmation when it&rsquo;s sent.</li>
+            </ul>
+            <p className="muted small">
+              Have your driver&rsquo;s license, bank routing info, and any employer forms ready
+              before you start.
+            </p>
+          </div>
+        )}
+
+        {currentStep.id === "worker-type" && (
+          <div className="stack">
+            <p className="subtitle" style={{ marginTop: 0 }}>
+              Choose the option that matches your role. This controls which forms you&rsquo;ll upload next.
+            </p>
+            <div className="grid-two">
+              {WORKER_TYPE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={profile.workerType === option.value ? "choice selected" : "choice"}
+                  onClick={() => setProfileValue("workerType", option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {currentStep.id === "employer-location" && (
+          <div className="field-grid">
+            <label>
+              Employer Entity
+              <select
+                value={profile.employerEntity}
+                onChange={(event) => setProfileValue("employerEntity", event.target.value)}
+              >
+                <option value="">Select an entity</option>
+                {EMPLOYER_ENTITY_OPTIONS.map((entity) => (
+                  <option key={entity.value} value={entity.value}>
+                    {entity.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Work Location / State
+              <select
+                value={profile.workLocationState}
+                onChange={(event) => setProfileValue("workLocationState", event.target.value)}
+              >
+                <option value="">Select a location</option>
+                {WORK_LOCATION_OPTIONS.map((location) => (
+                  <option key={location.value} value={location.value}>
+                    {location.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
+
+        {currentStep.id === "profile" && (
+          <div className="field-grid">
+            <label>
+              Full Legal Name
+              <input
+                value={profile.fullLegalName}
+                onChange={(event) => setProfileValue("fullLegalName", event.target.value)}
+              />
+            </label>
+            <label>
+              Preferred Name
+              <input
+                value={profile.preferredName}
+                onChange={(event) => setProfileValue("preferredName", event.target.value)}
+              />
+            </label>
+            <label>
+              Email
+              <input
+                type="email"
+                value={profile.email}
+                onChange={(event) => setProfileValue("email", event.target.value)}
+              />
+            </label>
+            <label>
+              Phone
+              <input
+                value={profile.phone}
+                onChange={(event) => setProfileValue("phone", event.target.value)}
+              />
+            </label>
+            <label>
+              Street Address
+              <input
+                value={profile.streetAddress}
+                onChange={(event) => setProfileValue("streetAddress", event.target.value)}
+              />
+            </label>
+            <label>
+              City
+              <input
+                value={profile.city}
+                onChange={(event) => setProfileValue("city", event.target.value)}
+              />
+            </label>
+            <label>
+              State
+              <input
+                value={profile.state}
+                onChange={(event) => setProfileValue("state", event.target.value)}
+              />
+            </label>
+            <label>
+              Zip
+              <input
+                value={profile.zip}
+                onChange={(event) => setProfileValue("zip", event.target.value)}
+              />
+            </label>
+            <label>
+              Start Date
+              <input
+                type="date"
+                value={profile.startDate}
+                onChange={(event) => setProfileValue("startDate", event.target.value)}
+              />
+            </label>
+            <label>
+              Shirt Size
+              <select
+                value={profile.shirtSize}
+                onChange={(event) => setProfileValue("shirtSize", event.target.value)}
+              >
+                <option value="">Select shirt size</option>
+                {SHIRT_SIZE_OPTIONS.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Manager Name
+              <input
+                value={profile.managerName}
+                onChange={(event) => setProfileValue("managerName", event.target.value)}
+              />
+            </label>
+            <label>
+              Emergency Contact Name
+              <input
+                value={profile.emergencyContactName}
+                onChange={(event) => setProfileValue("emergencyContactName", event.target.value)}
+              />
+            </label>
+            <label>
+              Emergency Contact Phone
+              <input
+                value={profile.emergencyContactPhone}
+                onChange={(event) => setProfileValue("emergencyContactPhone", event.target.value)}
+              />
+            </label>
+          </div>
+        )}
+
+        {currentStep.id === "uploads" && (
+          <div className="stack">
+            <p className="subtitle" style={{ marginTop: 0 }}>
+              Download each form, fill it out, sign it, then upload the completed file.
+              PDFs, PNGs, or JPGs are accepted.
+            </p>
             {requiredForms.map((form) => {
               const state =
                 uploadStates[form.id] ??
                 ({ status: "idle", progress: 0, error: null, pendingFile: null } satisfies UploadState);
-              const upload = uploadedFiles[form.id];
+              const uploaded = uploadedFiles[form.id];
 
               return (
                 <article key={form.id} className="upload-card">
@@ -480,7 +575,7 @@ export function OnboardingWizard() {
                     <button
                       type="button"
                       className="btn-secondary"
-                      disabled={!upload && state.status === "idle"}
+                      disabled={!uploaded && state.status === "idle"}
                       onClick={() => clearUpload(form.id)}
                     >
                       Clear
@@ -491,9 +586,9 @@ export function OnboardingWizard() {
                     <p className="upload-progress">Uploading: {Math.round(state.progress)}%</p>
                   ) : null}
 
-                  {upload ? (
+                  {uploaded ? (
                     <p className="success-text">
-                      Uploaded: <strong>{upload.fileName}</strong>
+                      Uploaded: <strong>{uploaded.fileName}</strong>
                     </p>
                   ) : null}
 
@@ -503,58 +598,113 @@ export function OnboardingWizard() {
             })}
           </div>
         )}
+
+        {currentStep.id === "review" && (
+          <div className="stack">
+            <p className="subtitle" style={{ marginTop: 0 }}>
+              Take a second to make sure everything looks right before you submit.
+            </p>
+
+            <div className="review-grid">
+              <div>
+                <h3>Profile</h3>
+                <p className={isProfileValid ? "success-text" : "error-text"}>
+                  {isProfileValid
+                    ? "All required profile fields are complete."
+                    : "Some required profile fields are missing."}
+                </p>
+              </div>
+              <div>
+                <h3>Uploads</h3>
+                <p className={hasAllRequiredUploads ? "success-text" : "error-text"}>
+                  {hasAllRequiredUploads
+                    ? "All required forms uploaded."
+                    : "Missing one or more required uploads."}
+                </p>
+              </div>
+            </div>
+
+            <dl className="summary-list">
+              <div>
+                <dt>Name</dt>
+                <dd>{profile.fullLegalName || "\u2014"}</dd>
+              </div>
+              <div>
+                <dt>Email</dt>
+                <dd>{profile.email || "\u2014"}</dd>
+              </div>
+              <div>
+                <dt>Worker Type</dt>
+                <dd>
+                  {WORKER_TYPE_OPTIONS.find((o) => o.value === profile.workerType)?.label ??
+                    "\u2014"}
+                </dd>
+              </div>
+              <div>
+                <dt>Entity</dt>
+                <dd>
+                  {EMPLOYER_ENTITY_OPTIONS.find((o) => o.value === profile.employerEntity)
+                    ?.label ?? "\u2014"}
+                </dd>
+              </div>
+              <div>
+                <dt>Start Date</dt>
+                <dd>{profile.startDate || "\u2014"}</dd>
+              </div>
+              <div>
+                <dt>Uploads</dt>
+                <dd>
+                  {requiredForms.length > 0
+                    ? `${Object.keys(uploadedFiles).length} / ${requiredForms.length} complete`
+                    : "\u2014"}
+                </dd>
+              </div>
+            </dl>
+
+            <label className="checkbox-row">
+              <input
+                type="checkbox"
+                checked={confirmationChecked}
+                onChange={(event) => setConfirmationChecked(event.target.checked)}
+              />
+              I confirm all information is accurate and all required signed forms are uploaded.
+            </label>
+
+            {submitError ? <p className="error-text">{submitError}</p> : null}
+          </div>
+        )}
       </section>
 
-      <section className="panel">
-        <h2>6. Review & Submit</h2>
-        <div className="review-grid">
-          <div>
-            <h3>Profile Status</h3>
-            <p className={isProfileValid ? "success-text" : "error-text"}>
-              {isProfileValid ? "All required profile fields are complete." : "Some required profile fields are missing."}
-            </p>
-          </div>
-          <div>
-            <h3>Required Upload Status</h3>
-            <p className={hasAllRequiredUploads ? "success-text" : "error-text"}>
-              {hasAllRequiredUploads
-                ? "All required forms uploaded."
-                : "Missing one or more required uploads."}
-            </p>
-          </div>
-        </div>
-
-        <label className="checkbox-row">
-          <input
-            type="checkbox"
-            checked={confirmationChecked}
-            onChange={(event) => setConfirmationChecked(event.target.checked)}
-          />
-          I confirm all information is accurate and all required signed forms are uploaded.
-        </label>
-
-        <button type="button" className="btn-primary" disabled={!canSubmit} onClick={() => void handleSubmit()}>
-          {isSubmitting ? "Submitting..." : "Submit Onboarding Packet"}
+      <nav className="step-nav" aria-label="Step navigation">
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={goBack}
+          disabled={isFirstStep || isSubmitting}
+        >
+          Back
         </button>
 
-        {submitError ? <p className="error-text">{submitError}</p> : null}
-      </section>
-
-      <section className="panel">
-        <h2>7. Success</h2>
-        <p className="muted">
-          After successful submission, you will be redirected to a confirmation page showing your packet was emailed.
-        </p>
-      </section>
-
-      <section className="panel small">
-        <h2>Admin Notes</h2>
-        <p className="muted">
-          Configurable values are centralized in <code>lib/config.ts</code>. Recipient emails are set by environment variables only.
-        </p>
-        <p className="muted">Submission Session: {submissionId}</p>
-        <p className="muted">Available forms in config: {REQUIRED_FORMS.length}</p>
-      </section>
+        {isLastStep ? (
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={!stepIsComplete}
+            onClick={() => void handleSubmit()}
+          >
+            {isSubmitting ? "Submitting..." : "Submit Onboarding Packet"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={goNext}
+            disabled={!stepIsComplete}
+          >
+            Continue
+          </button>
+        )}
+      </nav>
     </main>
   );
 }
