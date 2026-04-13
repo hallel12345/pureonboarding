@@ -7,6 +7,7 @@ export type UploadStatus = "idle" | "uploading" | "success" | "error";
 export type EmployerEntity = {
   value: string;
   label: string;
+  forWorkerTypes: WorkerType[];
 };
 
 export type WorkLocation = {

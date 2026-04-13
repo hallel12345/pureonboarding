@@ -21,7 +21,7 @@ const basePayload = {
     emergencyContactName: "Emergency Contact",
     emergencyContactPhone: "8015553333",
     workerType: "1099",
-    employerEntity: "pure-pest-ut",
+    employerEntity: "pure-marketing-llc",
     workLocationState: "UT",
   },
   uploads: {

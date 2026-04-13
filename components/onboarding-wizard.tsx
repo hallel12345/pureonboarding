@@ -127,8 +127,29 @@ export function OnboardingWizard() {
   const isFirstStep = stepIndex === 0;
 
   function setProfileValue<K extends keyof ProfileFormData>(key: K, value: ProfileFormData[K]) {
-    setProfile((prev) => ({ ...prev, [key]: value }));
+    setProfile((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "workerType") {
+        const matchingEntity = EMPLOYER_ENTITY_OPTIONS.filter((entity) =>
+          entity.forWorkerTypes.includes(value as WorkerType),
+        );
+        const currentStillValid = matchingEntity.some(
+          (entity) => entity.value === prev.employerEntity,
+        );
+        if (!currentStillValid) {
+          next.employerEntity = matchingEntity.length === 1 ? matchingEntity[0].value : "";
+        }
+      }
+      return next;
+    });
   }
+
+  const availableEntities = useMemo(() => {
+    if (!profile.workerType) return EMPLOYER_ENTITY_OPTIONS;
+    return EMPLOYER_ENTITY_OPTIONS.filter((entity) =>
+      entity.forWorkerTypes.includes(profile.workerType as WorkerType),
+    );
+  }, [profile.workerType]);
 
   function setUploadState(formId: FormId, state: Partial<UploadState>) {
     setUploadStates((prev) => {
@@ -369,36 +390,42 @@ export function OnboardingWizard() {
         )}
 
         {currentStep.id === "employer-location" && (
-          <div className="field-grid">
-            <label>
-              Employer Entity
-              <select
-                value={profile.employerEntity}
-                onChange={(event) => setProfileValue("employerEntity", event.target.value)}
-              >
-                <option value="">Select an entity</option>
-                {EMPLOYER_ENTITY_OPTIONS.map((entity) => (
-                  <option key={entity.value} value={entity.value}>
+          <div className="stack">
+            <div>
+              <h3 className="field-heading">Employer Entity</h3>
+              <div className="grid-two">
+                {availableEntities.map((entity) => (
+                  <button
+                    key={entity.value}
+                    type="button"
+                    className={
+                      profile.employerEntity === entity.value ? "choice selected" : "choice"
+                    }
+                    onClick={() => setProfileValue("employerEntity", entity.value)}
+                  >
                     {entity.label}
-                  </option>
+                  </button>
                 ))}
-              </select>
-            </label>
+              </div>
+            </div>
 
-            <label>
-              Work Location / State
-              <select
-                value={profile.workLocationState}
-                onChange={(event) => setProfileValue("workLocationState", event.target.value)}
-              >
-                <option value="">Select a location</option>
+            <div>
+              <h3 className="field-heading">Work Location</h3>
+              <div className="grid-two">
                 {WORK_LOCATION_OPTIONS.map((location) => (
-                  <option key={location.value} value={location.value}>
+                  <button
+                    key={location.value}
+                    type="button"
+                    className={
+                      profile.workLocationState === location.value ? "choice selected" : "choice"
+                    }
+                    onClick={() => setProfileValue("workLocationState", location.value)}
+                  >
                     {location.label}
-                  </option>
+                  </button>
                 ))}
-              </select>
-            </label>
+              </div>
+            </div>
           </div>
         )}
 

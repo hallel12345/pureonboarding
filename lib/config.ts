@@ -6,8 +6,21 @@ export const WORKER_TYPE_OPTIONS: { value: WorkerType; label: string }[] = [
 ];
 
 export const EMPLOYER_ENTITY_OPTIONS: EmployerEntity[] = [
-  { value: "pure-pest-ut", label: "Pure Pest Solutions (Utah)" },
-  { value: "pure-pest-id", label: "Pure Pest Solutions (Idaho)" },
+  {
+    value: "pure-marketing-llc",
+    label: "Pure Marketing LLC",
+    forWorkerTypes: ["1099"],
+  },
+  {
+    value: "pure-pest-control-llc",
+    label: "Pure Pest Control LLC (Utah)",
+    forWorkerTypes: ["w2"],
+  },
+  {
+    value: "pure-pest-solutions-id-llc",
+    label: "Pure Pest Solutions of Idaho LLC",
+    forWorkerTypes: ["w2"],
+  },
 ];
 
 export const WORK_LOCATION_OPTIONS: WorkLocation[] = [
