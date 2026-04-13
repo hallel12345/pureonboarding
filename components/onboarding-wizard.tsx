@@ -215,7 +215,6 @@ export function OnboardingWizard() {
       const blob = await upload(blobPath, file, {
         access: "public",
         handleUploadUrl: "/api/blob/upload",
-        multipart: true,
         clientPayload: JSON.stringify({
           submissionId,
           formId,
@@ -248,9 +247,10 @@ export function OnboardingWizard() {
         error: null,
       });
     } catch (error) {
+      console.error("[client upload error]", error);
       const errorMessage =
         error instanceof Error
-          ? error.message
+          ? `${error.name}: ${error.message}`
           : "Upload failed. Please retry this file.";
 
       setUploadState(formId, {

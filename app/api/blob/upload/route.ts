@@ -45,9 +45,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       error: error instanceof Error ? error.message : "Unknown upload error",
     });
 
+    const errorDetail = error instanceof Error ? error.message : "Unknown upload error";
     return NextResponse.json(
       {
-        error: "Upload initialization failed. Please retry.",
+        error: `Upload initialization failed: ${errorDetail}`,
         requestId,
       },
       { status: 400 },
