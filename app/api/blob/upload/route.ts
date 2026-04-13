@@ -28,13 +28,8 @@ export async function POST(request: Request): Promise<NextResponse> {
           tokenPayload: clientPayload,
         };
       },
-      onUploadCompleted: async ({ blob, tokenPayload }) => {
-        console.info("[upload-complete]", {
-          requestId,
-          blobUrl: blob.url,
-          pathname: blob.pathname,
-          tokenPayload,
-        });
+      onUploadCompleted: async () => {
+        console.info("[upload-complete]", { requestId });
       },
     });
 
