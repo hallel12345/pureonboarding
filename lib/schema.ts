@@ -2,10 +2,10 @@ import { z } from "zod";
 import { EMPLOYER_ENTITY_OPTIONS, REQUIRED_FORMS, WORK_LOCATION_OPTIONS } from "./config";
 
 const workerTypeSchema = z.enum(["1099", "w2"]);
-const formIdSchema = z.enum(REQUIRED_FORMS.map((form) => form.id) as [
-  "w9" | "w4" | "i9" | "direct_deposit",
-  ...("w9" | "w4" | "i9" | "direct_deposit")[],
-]);
+type AllFormId = "w9" | "w4" | "i9" | "direct_deposit" | "drivers_license";
+const formIdSchema = z.enum(
+  REQUIRED_FORMS.map((form) => form.id) as [AllFormId, ...AllFormId[]],
+);
 
 const entityValues = EMPLOYER_ENTITY_OPTIONS.map((option) => option.value);
 const workLocationValues = WORK_LOCATION_OPTIONS.map((option) => option.value);

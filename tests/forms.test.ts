@@ -7,8 +7,8 @@ describe("required forms by worker type", () => {
     expect(forms).toEqual(["w9", "direct_deposit"]);
   });
 
-  it("returns W4, I9 and Direct Deposit for W2", () => {
+  it("returns W4, I9, Direct Deposit, and Driver's License for W2", () => {
     const forms = getRequiredFormsByWorkerType("w2").map((form) => form.id);
-    expect(forms).toEqual(["w4", "i9", "direct_deposit"]);
+    expect(forms).toEqual(["w4", "i9", "direct_deposit", "drivers_license"]);
   });
 });

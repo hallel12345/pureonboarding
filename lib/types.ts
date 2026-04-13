@@ -1,6 +1,6 @@
 export type WorkerType = "1099" | "w2";
 
-export type FormId = "w9" | "w4" | "i9" | "direct_deposit";
+export type FormId = "w9" | "w4" | "i9" | "direct_deposit" | "drivers_license";
 
 export type UploadStatus = "idle" | "uploading" | "success" | "error";
 
@@ -17,8 +17,9 @@ export type WorkLocation = {
 export type RequiredFormDefinition = {
   id: FormId;
   title: string;
-  previewUrl: string;
-  downloadUrl: string;
+  previewUrl?: string;
+  downloadUrl?: string;
+  uploadHint?: string;
   requiredFor: WorkerType[];
 };
 

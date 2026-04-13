@@ -429,19 +429,32 @@ export function OnboardingWizard() {
                   <div className="upload-head">
                     <div>
                       <h3>{form.title}</h3>
-                      <p className="muted">Upload your completed and signed file.</p>
+                      <p className="muted">
+                        {form.uploadHint ?? "Upload your completed and signed file."}
+                      </p>
                     </div>
                     <span className={`status status-${state.status}`}>{state.status}</span>
                   </div>
 
-                  <div className="actions-row">
-                    <a className="btn-secondary" href={form.previewUrl} target="_blank" rel="noreferrer">
-                      Preview
-                    </a>
-                    <a className="btn-secondary" href={form.downloadUrl} download>
-                      Download
-                    </a>
-                  </div>
+                  {form.previewUrl || form.downloadUrl ? (
+                    <div className="actions-row">
+                      {form.previewUrl ? (
+                        <a
+                          className="btn-secondary"
+                          href={form.previewUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Preview
+                        </a>
+                      ) : null}
+                      {form.downloadUrl ? (
+                        <a className="btn-secondary" href={form.downloadUrl} download>
+                          Download
+                        </a>
+                      ) : null}
+                    </div>
+                  ) : null}
 
                   <div className="actions-row">
                     <input

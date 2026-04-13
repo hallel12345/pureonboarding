@@ -45,6 +45,13 @@ export const REQUIRED_FORMS: RequiredFormDefinition[] = [
     downloadUrl: "/forms/direct-deposit.pdf",
     requiredFor: ["1099", "w2"],
   },
+  {
+    id: "drivers_license",
+    title: "Driver's License",
+    uploadHint:
+      "Upload a clear photo or scan of the front of your current driver's license (PDF, PNG, or JPG).",
+    requiredFor: ["w2"],
+  },
 ];
 
 export const SHIRT_SIZE_OPTIONS = ["XS", "S", "M", "L", "XL", "2XL", "3XL"];

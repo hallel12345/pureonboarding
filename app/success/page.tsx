@@ -5,9 +5,10 @@ export default function SuccessPage() {
     <main className="shell">
       <section className="panel success-panel">
         <p className="eyebrow">Submission Complete</p>
-        <h1>Onboarding Packet Sent Successfully</h1>
-        <p className="subtitle">
-          Your onboarding details and uploaded forms were sent to payroll/accounting. You can close this page.
+        <h1>Welcome to Pure Pest Solutions</h1>
+        <p className="subtitle" style={{ margin: "0.8rem auto 0" }}>
+          Your onboarding packet and signed forms were sent to payroll and accounting. You&rsquo;re all
+          set &mdash; you can safely close this page.
         </p>
         <Link className="btn-secondary" href="/">
           Start Another Submission
